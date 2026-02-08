@@ -1,0 +1,181 @@
+import { useState, useEffect, useRef } from 'react';
+import Navbar from '../components/Navbar';
+
+interface Message {
+    id: number;
+    sender: 'ai' | 'user';
+    text: string;
+}
+
+export default function TriageChat() {
+    const [messages, setMessages] = useState<Message[]>([
+        { id: 1, sender: 'ai', text: 'Hello. I have analyzed your scan. Based on the preliminary results, I need to ask a few questions to better understand your condition. Do you have a persistent cough?' }
+    ]);
+    const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const handleSend = () => {
+        if (!input.trim()) return;
+
+        const userMsg: Message = { id: Date.now(), sender: 'user', text: input };
+        setMessages(prev => [...prev, userMsg]);
+        setInput('');
+        setIsTyping(true);
+
+        // Simulate AI response logic
+        setTimeout(() => {
+            let aiResponse = '';
+            const lowerInput = input.toLowerCase();
+
+            if (lowerInput.includes('yes')) {
+                aiResponse = "I see. How long have you had this cough? Is it producing any phlegm?";
+            } else if (lowerInput.includes('no')) {
+                aiResponse = "That is good. Are you experiencing any chest pain or difficulty breathing?";
+            } else if (lowerInput.includes('pain') || lowerInput.includes('breath')) {
+                aiResponse = "Understood. The AI scan combined with your symptoms suggests patterns consistent with early-stage pneumonia. I strongly recommend sealing this record and consulting a specialist.";
+            } else {
+                aiResponse = "Thank you for the information. Do you have any fever or chills?";
+            }
+
+            setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: aiResponse }]);
+            setIsTyping(false);
+        }, 1500);
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') handleSend();
+    };
+
+    return (
+        <div className="text-slate-400 antialiased h-screen flex flex-col selection:bg-sky-500/20 selection:text-sky-200 overflow-hidden">
+            <Navbar />
+
+            <main className="flex-grow pt-20 px-4 md:px-6 relative flex flex-col items-center justify-center h-full overflow-hidden">
+
+                <div className="w-full max-w-5xl h-[calc(100vh-100px)] md:h-[calc(100vh-120px)] flex flex-col">
+                    <div className="flex flex-col h-full rounded-3xl border border-white/10 bg-[#0a0a0a]/90 backdrop-blur-sm relative overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/5">
+
+                        {/* Chat Header */}
+                        <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 relative">
+                                    <iconify-icon icon="solar:chat-round-dots-bold" width="20"></iconify-icon>
+                                    <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0a0a0a]"></div>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-white tracking-tight">Xyra Medical Assistant</h3>
+                                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                                        <span className="flex items-center gap-1.5">
+                                            <iconify-icon icon="solar:pulse-2-bold" width="12" className="text-emerald-500"></iconify-icon>
+                                            System Active
+                                        </span>
+                                        <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                                        <span>Case #8392-A</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 transition-all hover:scale-105 active:scale-95">
+                                    <iconify-icon icon="solar:shield-check-bold" width="16"></iconify-icon>
+                                    <span className="text-xs font-semibold">Seal Record</span>
+                                </button>
+                                <button className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                                    <iconify-icon icon="solar:menu-dots-bold" width="20"></iconify-icon>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Messages Area */}
+                        <div className="flex-grow overflow-y-auto p-6 md:p-8 space-y-6 scroll-smooth">
+                            <div className="flex justify-center mb-8">
+                                <span className="text-xs font-medium text-slate-600 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Today</span>
+                            </div>
+
+                            {messages.map((msg) => (
+                                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} group animate-fade-in-up`}>
+                                    <div className={`flex items-end max-w-[85%] md:max-w-[70%] gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-lg ${msg.sender === 'user'
+                                            ? 'bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/30'
+                                            : 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
+                                            }`}>
+                                            <iconify-icon icon={msg.sender === 'user' ? "solar:user-bold" : "solar:robot-2-bold"} width="16"></iconify-icon>
+                                        </div>
+                                        <div className={`p-4 md:px-6 md:py-4 rounded-3xl text-sm leading-relaxed shadow-md ${msg.sender === 'user'
+                                            ? 'bg-indigo-600 text-white rounded-br-sm'
+                                            : 'bg-[#1a1a1a] border border-white/5 text-slate-200 rounded-bl-sm'
+                                            }`}>
+                                            {msg.text}
+                                        </div>
+                                        <span className="text-[10px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity self-center">
+                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {isTyping && (
+                                <div className="flex justify-start animate-fade-in-up">
+                                    <div className="flex items-end max-w-[80%] gap-3">
+                                        <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30">
+                                            <iconify-icon icon="solar:robot-2-bold" width="16"></iconify-icon>
+                                        </div>
+                                        <div className="p-4 rounded-3xl bg-[#1a1a1a] border border-white/5 text-slate-200 rounded-bl-sm flex gap-1.5 items-center h-12">
+                                            <span className="w-1.5 h-1.5 bg-emerald-500/40 rounded-full animate-[bounce_1s_infinite_0ms]"></span>
+                                            <span className="w-1.5 h-1.5 bg-emerald-500/40 rounded-full animate-[bounce_1s_infinite_200ms]"></span>
+                                            <span className="w-1.5 h-1.5 bg-emerald-500/40 rounded-full animate-[bounce_1s_infinite_400ms]"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-4 md:p-6 border-t border-white/5 bg-[#0a0a0a]">
+                            <div className="relative flex items-center gap-3">
+                                <button className="p-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors shrink-0">
+                                    <iconify-icon icon="solar:paperclip-linear" width="20"></iconify-icon>
+                                </button>
+                                <div className="relative flex-grow">
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Type your symptoms..."
+                                        className="w-full bg-[#151515] border border-white/10 rounded-2xl pl-5 pr-14 py-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all shadow-inner"
+                                    />
+                                    <button
+                                        onClick={handleSend}
+                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg ${input.trim()
+                                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white translate-x-0 opacity-100'
+                                            : 'bg-white/5 text-slate-500 cursor-not-allowed translate-x-2 opacity-0 pointer-events-none'
+                                            }`}
+                                    >
+                                        <iconify-icon icon="solar:plain-3-bold" width="18"></iconify-icon>
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-center text-[10px] text-slate-600 mt-3">
+                                AI responses are for informational purposes only. In emergencies, call 911 immediately.
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+            </main>
+
+        </div>
+    );
+}
